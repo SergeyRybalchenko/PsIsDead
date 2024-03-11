@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Population Data</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.population-info {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.population-info p {
+  margin: 10px 0;
+}
+
+.server-info {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Planet Side 2 Online</h1>
+  </div>
+  <div class="population-info" id="population-info">
+    <p>Loading...</p>
+  </div>
+</div>
+
+<script>
+const worldsData = [
+  { id: 1, name: "Connery" },
+  { id: 10, name: "Miller" },
+  { id: 13, name: "Cobalt" },
+  { id: 17, name: "Emerald" },
+  { id: 19, name: "Jaeger" },
+  { id: 40, name: "SolTech" }
+];
+
+const apiUrl = 'https://cors-anywhere.herokuapp.com/https://ps2.fisu.pw/api/population/?world=';
+
+async function fetchPopulation(worldId) {
+  try {
+    const response = await fetch(apiUrl + worldId);
+    if (!response.ok) {
+      throw new Error(`Error fetching population data for world ${worldId}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return { worldId, populationData: data.result[0] };
+  } catch (error) {
+    throw new Error(`Error fetching population data for world ${worldId}: ${error.message}`);
+  }
+}
+
+async function getTotalPopulation() {
+  let totalVS = 0;
+  let totalNC = 0;
+  let totalTR = 0;
+  let totalNS = 0;
+  const serverInfos = [];
+
+  for (const worldData of worldsData) {
+    try {
+      const { worldId, populationData } = await fetchPopulation(worldData.id);
+      totalVS += populationData.vs;
+      totalNC += populationData.nc;
+      totalTR += populationData.tr;
+      totalNS += populationData.ns;
+      serverInfos.push({ worldName: worldData.name, online: populationData.vs + populationData.nc + populationData.tr + populationData.ns });
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+
+  displayServerInfos(serverInfos);
+  displayTotalPopulation({ totalVS, totalNC, totalTR, totalNS });
+}
+
+function displayServerInfos(serverInfos) {
+  const populationInfo = document.getElementById('population-info');
+  populationInfo.innerHTML = ''; // Очистить содержимое
+  serverInfos.forEach(serverInfo => {
+    const serverInfoContainer = document.createElement('div');
+    serverInfoContainer.classList.add('server-info');
+    serverInfoContainer.innerHTML = `<p>Server ${serverInfo.worldName}: Online: ${serverInfo.online}</p>`;
+    populationInfo.appendChild(serverInfoContainer);
+  });
+}
+
+function displayTotalPopulation(totals) {
+  const populationInfo = document.getElementById('population-info');
+  const totalPopulationContainer = document.createElement('div');
+  totalPopulationContainer.classList.add('server-info');
+  totalPopulationContainer.innerHTML = `
+    <p>Total VS: ${totals.totalVS}</p>
+    <p>Total NC: ${totals.totalNC}</p>
+    <p>Total TR: ${totals.totalTR}</p>
+    <p>Total NS: ${totals.totalNS}</p>
+    <p>Total Online: ${totals.totalVS + totals.totalNC + totals.totalTR + totals.totalNS}</p>
+  `;
+  populationInfo.appendChild(totalPopulationContainer);
+}
+
+getTotalPopulation();
+</script>
+</body>
+</html>
